@@ -46,7 +46,7 @@ Own the search pipeline. No browser shell required.
 3. **Fetch path A (default):** HTTP GET → HTML extract (what `betterweb-judge` already does) → judge → index.
 4. **Fetch path B (JS when needed):** [Lightpanda](https://github.com/lightpanda-io/browser) over CDP — from-scratch Zig headless, not a Chromium fork; obey robots; fall back only when a page is empty/broken under Lightpanda.
 5. **Store:** raw WARC (source of truth) + disposable inverted index.
-6. **Rank:** BM25 relevance × BetterWeb `ranking_hints` (thought quality, niche, slop/malice penalties). Propaganda = badge/filter, not silent delete.
+6. **Rank:** BM25 × **CraftRank** (quality-weighted endorsement graph) × judgment penalties. See [`craftrank.md`](craftrank.md). Propaganda = badge/filter, not silent delete.
 7. **Node model:** each install is a complete mini search engine; peers optionally share WARC shards / attestations (mycel-style federation, not a Google clone).
 
 This is how we “access the actual WWW” without installing Chrome as a dependency.

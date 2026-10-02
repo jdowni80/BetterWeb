@@ -57,14 +57,17 @@ Fine-tune later on BetterWeb-labeled examples; start with described labels and h
 
 ## Ranking philosophy
 
-Not PageRank alone. Blend:
+Not vanilla PageRank (links are gamed). BetterWeb uses **CraftRank** — a PageRank-shaped authority score on a *quality-weighted endorsement graph*, with anti-slop priors and anti-farm edge damping. Full write-up: [`craftrank.md`](craftrank.md).
 
-1. **Lexical / semantic relevance** to the query (standard IR).
-2. **Decision scores** from the local model (quality, human-likeness, malice).
-3. **Community attestations** (optional, signed, portable) — “this niche site is real and useful.”
-4. **Personal taste** — on-device preferences; never uploaded by default.
+Blend at query time:
 
-Propaganda is **surfaced as a flag**, not deleted. Users stay in control of filters.
+1. **Lexical / semantic relevance** to the query (BM25-class IR).
+2. **CraftRank** offline authority \(r_i\) (earned endorsements only).
+3. **Decision scores** from the local model (quality, human-likeness, malice, ads).
+4. **Community attestations** (optional, signed, portable) — “this niche site is real and useful.”
+5. **Personal taste** — on-device preferences; never uploaded by default.
+
+Propaganda is **surfaced as a flag**, not deleted. Users stay in control of filters. Propaganda↔propaganda link loops are damped so they cannot PageRank themselves into dominance.
 
 ## Decentralization sketch
 
