@@ -15,5 +15,4 @@ web/node_modules/
 huggingface/
 .hf/
 bin/
-web/node_modules/
 data/runtime/
