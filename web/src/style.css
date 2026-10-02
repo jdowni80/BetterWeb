@@ -212,6 +212,23 @@ button {
   align-items: center;
 }
 
+.mode-row {
+  margin: -0.35rem 0 1rem;
+}
+
+.mode {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.75rem;
+  color: var(--fog);
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.mode input {
+  accent-color: var(--flare);
+}
+
 .badge {
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.68rem;

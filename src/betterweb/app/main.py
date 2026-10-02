@@ -14,6 +14,7 @@ from betterweb.engines import engine_statuses, open_with_engine
 from betterweb.judge import PageJudge
 from betterweb.search import SearchIndex
 from betterweb.search.ingest import ingest_url
+from betterweb.search.live import live_search
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SEED_PATH = REPO_ROOT / "data" / "seed" / "corpus.json"
@@ -61,15 +62,43 @@ def engines() -> dict:
 @app.get("/api/search")
 def search(
     q: str = Query(..., min_length=1),
-    limit: int = Query(default=20, ge=1, le=100),
+    limit: int = Query(default=8, ge=1, le=30),
+    mode: str = Query(
+        default="live",
+        description="live = discover+fetch+rank the web; local = seed corpus only",
+    ),
+    candidates: int = Query(default=8, ge=3, le=15),
+    lightpanda: bool = Query(default=False, description="Prefer Lightpanda for page fetch"),
+    judge: bool = Query(default=False, description="Run local GLiNER judge (slower)"),
 ) -> dict:
-    hits = INDEX.search(q, limit=limit)
-    return {
-        "query": q,
-        "count": len(hits),
-        "ranking": "bm25 * craft * human-quality penalties",
-        "hits": hits,
-    }
+    if mode == "local":
+        hits = INDEX.search(q, limit=limit)
+        return {
+            "query": q,
+            "mode": "local",
+            "count": len(hits),
+            "ranking": "bm25 * craft * human-quality penalties",
+            "hits": hits,
+            "errors": [],
+        }
+
+    global JUDGE
+    j = None
+    if judge:
+        if JUDGE is None:
+            JUDGE = PageJudge(lazy=True)
+        j = JUDGE
+    try:
+        return live_search(
+            q,
+            max_candidates=candidates,
+            limit=limit,
+            prefer_lightpanda=lightpanda,
+            use_judge=judge,
+            judge=j,
+        )
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Live search failed: {exc}") from exc
 
 
 @app.get("/api/corpus")

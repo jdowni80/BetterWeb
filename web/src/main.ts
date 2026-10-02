@@ -27,16 +27,20 @@ app.innerHTML = `
   <header class="hero">
     <h1 class="brand">Better<span>Web</span></h1>
     <p class="tagline">
-      Search ranked for human craft — not ads, SEO farms, or AI filler.
-      CraftRank owns the score. Lightpanda fetches. Servo &amp; Ladybird browse.
+      Live web discovery, ranked by BetterWeb — human craft over ads, SEO farms, and AI filler.
+      CraftRank owns the score. Lightpanda can fetch. Servo &amp; Ladybird browse.
     </p>
     <div class="engines" id="engines"></div>
   </header>
 
   <form class="search-row" id="search-form">
-    <input id="q" type="search" placeholder="Search the indexed web…" value="heater wiring" autocomplete="off" />
+    <input id="q" type="search" placeholder="Search the live web…" value="vacuum tube heater wiring" autocomplete="off" />
     <button class="btn-primary" type="submit">Search</button>
   </form>
+  <div class="row mode-row">
+    <label class="mode"><input type="radio" name="mode" value="live" checked /> Live web</label>
+    <label class="mode"><input type="radio" name="mode" value="local" /> Local seed only</label>
+  </div>
   <div class="meta" id="meta">Loading engines…</div>
   <div class="results" id="results"></div>
 
@@ -57,6 +61,11 @@ const resultsEl = document.querySelector<HTMLDivElement>("#results")!;
 const metaEl = document.querySelector<HTMLDivElement>("#meta")!;
 const ingestMeta = document.querySelector<HTMLDivElement>("#ingest-meta")!;
 const qInput = document.querySelector<HTMLInputElement>("#q")!;
+
+function selectedMode(): string {
+  const el = document.querySelector<HTMLInputElement>('input[name="mode"]:checked');
+  return el?.value || "live";
+}
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, init);
@@ -80,26 +89,34 @@ function renderEngines(engines: Engine[]) {
     .join("");
 }
 
+function escapeHtml(s: string): string {
+  return s
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
 function renderHits(hits: Hit[], query: string) {
   if (!hits.length) {
-    resultsEl.innerHTML = `<p class="empty">No matches for “${query}”.</p>`;
+    resultsEl.innerHTML = `<p class="empty">No matches for “${escapeHtml(query)}”.</p>`;
     return;
   }
   resultsEl.innerHTML = hits
     .map((hit, i) => {
       const badges = hit.badges
-        .map((b) => `<span class="badge ${b}">${b.replaceAll("_", " ")}</span>`)
+        .map((b) => `<span class="badge ${b}">${escapeHtml(b.replaceAll("_", " "))}</span>`)
         .join("");
       return `
       <article class="card" style="animation-delay:${i * 40}ms">
-        <h2><a href="${hit.url}" target="_blank" rel="noreferrer">${hit.title}</a></h2>
-        <div class="url">${hit.url}</div>
-        <p class="snippet">${hit.snippet}</p>
+        <h2><a href="${escapeHtml(hit.url)}" target="_blank" rel="noreferrer">${escapeHtml(hit.title)}</a></h2>
+        <div class="url">${escapeHtml(hit.url)}</div>
+        <p class="snippet">${escapeHtml(hit.snippet)}</p>
         <div class="row">
           ${badges}
-          <span class="badge">${hit.fetch_engine}</span>
-          <button class="btn-ghost" data-open="servo" data-url="${hit.url}">Open in Servo</button>
-          <button class="btn-ghost" data-open="ladybird" data-url="${hit.url}">Open in Ladybird</button>
+          <span class="badge">${escapeHtml(hit.fetch_engine)}</span>
+          <button class="btn-ghost" data-open="servo" data-url="${escapeHtml(hit.url)}">Open in Servo</button>
+          <button class="btn-ghost" data-open="ladybird" data-url="${escapeHtml(hit.url)}">Open in Ladybird</button>
           <span class="score">score ${hit.betterweb_score} · craft ${hit.craft}</span>
         </div>
       </article>`;
@@ -115,12 +132,37 @@ async function loadEngines() {
 }
 
 async function runSearch(query: string) {
-  metaEl.textContent = `Searching “${query}”…`;
-  const data = await api<{ hits: Hit[]; ranking: string; count: number }>(
-    `/api/search?q=${encodeURIComponent(query)}`,
-  );
-  metaEl.textContent = `${data.count} results · ${data.ranking}`;
-  renderHits(data.hits, query);
+  if (!query) return;
+  const mode = selectedMode();
+  metaEl.textContent =
+    mode === "live"
+      ? `Discovering & ranking live results for “${query}”…`
+      : `Searching local seed for “${query}”…`;
+  resultsEl.innerHTML = `<p class="empty">Working…</p>`;
+  try {
+    const data = await api<{
+      hits: Hit[];
+      ranking: string;
+      count: number;
+      mode?: string;
+      fetched?: number;
+      candidates?: number;
+      errors?: string[];
+    }>(`/api/search?q=${encodeURIComponent(query)}&mode=${encodeURIComponent(mode)}&limit=8`);
+    const extra =
+      data.mode === "live"
+        ? ` · ${data.candidates ?? "?"} candidates · ${data.fetched ?? "?"} fetched`
+        : "";
+    const err =
+      data.errors && data.errors.length
+        ? ` · ${data.errors.length} fetch warning(s)`
+        : "";
+    metaEl.textContent = `${data.count} results${extra}${err} · ${data.ranking}`;
+    renderHits(data.hits, query);
+  } catch (err) {
+    metaEl.textContent = `Search failed: ${err instanceof Error ? err.message : String(err)}`;
+    resultsEl.innerHTML = "";
+  }
 }
 
 document.querySelector("#search-form")!.addEventListener("submit", (ev) => {
@@ -142,7 +184,6 @@ document.querySelector("#ingest-form")!.addEventListener("submit", async (ev) =>
       },
     );
     ingestMeta.textContent = `Indexed via ${data.fetch_engine}: ${data.document.title}`;
-    if (qInput.value.trim()) void runSearch(qInput.value.trim());
   } catch (err) {
     ingestMeta.textContent = `Ingest failed: ${err instanceof Error ? err.message : String(err)}`;
   }
@@ -151,7 +192,6 @@ document.querySelector("#ingest-form")!.addEventListener("submit", async (ev) =>
 document.querySelector("#reload-seed")!.addEventListener("click", async () => {
   const data = await api<{ reloaded: number }>("/api/seed/reload", { method: "POST" });
   ingestMeta.textContent = `Seed reloaded (${data.reloaded} docs)`;
-  void runSearch(qInput.value.trim() || "heater");
 });
 
 resultsEl.addEventListener("click", async (ev) => {

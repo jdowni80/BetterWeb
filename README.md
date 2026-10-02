@@ -30,6 +30,14 @@ chmod +x scripts/run_prototype.sh
 
 Open **[BetterWeb](http://127.0.0.1:8742)**.
 
+**Live search** (default): discovers public-web candidates, fetches pages, then re-ranks with CraftRank + human-quality signals. Meta-search is only for discovery — BetterWeb owns ranking.
+
+```bash
+curl 'http://127.0.0.1:8742/api/search?q=vacuum%20tube%20heater%20wiring&mode=live'
+```
+
+Use `mode=local` for the offline seed corpus only.
+
 Dev mode (API + Vite separately):
 
 ```bash

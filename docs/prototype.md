@@ -20,10 +20,13 @@ UI: http://127.0.0.1:8742
 ## API
 
 - `GET /api/engines` — availability of CraftRank / Lightpanda / Servo / Ladybird
-- `GET /api/search?q=` — BM25 × CraftRank × quality penalties
+- `GET /api/search?q=&mode=live` — discover live web candidates → fetch → CraftRank × quality rank
+- `GET /api/search?q=&mode=local` — seed corpus only
 - `POST /api/ingest` — `{ "url", "judge": false, "prefer_lightpanda": true }`
 - `POST /api/open` — `{ "engine": "servo"|"ladybird", "url" }`
 - `POST /api/seed/reload` — reload offline corpus
+
+Live mode uses public meta-search **only as a candidate source**. Scoring/ranking stays BetterWeb-owned.
 
 ## Notes
 
