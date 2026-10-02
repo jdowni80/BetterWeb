@@ -17,6 +17,16 @@ Local BetterWeb shell that wires the four pillars:
 
 UI: http://127.0.0.1:8742
 
+## UI
+
+Frontend follows [UI Design Brain](../.cursor/skills/ui-design-brain/SKILL.md):
+
+- Skip link, sticky header, brand hero
+- Search input with icon, clear control, ⌘K focus, primary “Search web”
+- Segmented control for Live / Local
+- Result **list** (not card grid) with semantic badges
+- Skeleton loading (>300 ms), empty + error states with recovery CTAs
+
 ## API
 
 - `GET /api/engines` — availability of CraftRank / Lightpanda / Servo / Ladybird

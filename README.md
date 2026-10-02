@@ -13,6 +13,8 @@ A **browser and search engine** that favors human thought over AI slop, flags cl
 
 ## Prototype app
 
+UI rebuilt with [UI Design Brain](.cursor/skills/ui-design-brain) patterns (search field, segmented control, result list, skeleton/empty states, skip link, semantic badges).
+
 Local search UI wired to:
 
 | Piece | Role |

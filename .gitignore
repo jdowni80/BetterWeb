@@ -16,3 +16,4 @@ huggingface/
 .hf/
 bin/
 data/runtime/
+.cursor/skills/ui-design-brain/.git
