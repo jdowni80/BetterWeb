@@ -1,0 +1,101 @@
+{
+  "documents": [
+    {
+      "id": "niche.radio.notes",
+      "title": "Zenith 1978 heater wiring notes",
+      "url": "https://example.invalid/radio-notes",
+      "fetch_engine": "seed",
+      "text": "I spent Saturday tracing the heater wiring on a Zenith with a cold 50C5. The schematic in Rider's is close but the production board routes the dropper resistor under the tuner can. After replacing the wax coupling cap on the volume control the hum dropped and the dial lamps came back. Not a universal guide — just what I found on this chassis.",
+      "decisions": {
+        "authorship_likeness": "human_crafted",
+        "bot_spam": "no",
+        "propaganda_signal": "none",
+        "malice": "benign",
+        "thought_quality": "5",
+        "niche_value": "rare_gem"
+      }
+    },
+    {
+      "id": "wiki.electronics",
+      "title": "Vacuum tube heater circuits — field notes",
+      "url": "https://example.invalid/tube-heaters",
+      "fetch_engine": "seed",
+      "text": "Heater series strings, dropper resistors, and why a cold 50C5 kills the dial lamps. Written from bench measurements, with a short table of common series-heater radios from the late 1970s.",
+      "decisions": {
+        "authorship_likeness": "human_crafted",
+        "bot_spam": "no",
+        "propaganda_signal": "none",
+        "malice": "benign",
+        "thought_quality": "4",
+        "niche_value": "specialist_useful"
+      }
+    },
+    {
+      "id": "ai-synergy.farm",
+      "title": "Unlock Synergies With AI Transformation",
+      "url": "https://example.invalid/ai-synergies",
+      "fetch_engine": "seed",
+      "text": "In today's rapidly evolving digital landscape, businesses must leverage cutting-edge solutions to unlock unprecedented synergies and drive holistic transformation. By harnessing the power of AI-driven paradigms, organizations can seamlessly optimize workflows.",
+      "decisions": {
+        "authorship_likeness": "synthetic_filler",
+        "bot_spam": "uncertain",
+        "propaganda_signal": "none",
+        "malice": "benign",
+        "thought_quality": "1",
+        "niche_value": "common"
+      }
+    },
+    {
+      "id": "mobilize.now",
+      "title": "Urgent: Stand With Us Against Them",
+      "url": "https://example.invalid/mobilize-now",
+      "fetch_engine": "seed",
+      "text": "Share this now. Anyone who questions the plan is the enemy of the nation. Vote our party or betray the homeland. Victory or betrayal — choose.",
+      "decisions": {
+        "authorship_likeness": "mixed",
+        "bot_spam": "no",
+        "propaganda_signal": "clear",
+        "malice": "uncertain",
+        "thought_quality": "2",
+        "niche_value": "common"
+      }
+    },
+    {
+      "id": "scam.parcel",
+      "title": "Your package is held — confirm banking details",
+      "url": "https://example.invalid/parcel-verify",
+      "fetch_engine": "seed",
+      "text": "Click here within 1 hour or your shipment will be destroyed. Enter card CVV to release the parcel held at customs.",
+      "decisions": {
+        "authorship_likeness": "synthetic_filler",
+        "bot_spam": "yes",
+        "propaganda_signal": "none",
+        "malice": "scam_or_harm",
+        "thought_quality": "1",
+        "niche_value": "common"
+      }
+    },
+    {
+      "id": "garden.compost",
+      "title": "Three years of backyard compost — what actually worked",
+      "url": "https://example.invalid/compost-log",
+      "fetch_engine": "seed",
+      "text": "I kept a notebook on carbon ratios after the first pile went anaerobic. Browns from oak leaves, greens from kitchen scraps, turned weekly only in summer. The third year the tomatoes stopped needing bagged fertilizer. Photos and mistakes included.",
+      "decisions": {
+        "authorship_likeness": "human_crafted",
+        "bot_spam": "no",
+        "propaganda_signal": "none",
+        "malice": "benign",
+        "thought_quality": "5",
+        "niche_value": "specialist_useful"
+      }
+    }
+  ],
+  "edges": [
+    {"src": "wiki.electronics", "dst": "niche.radio.notes", "endorse": 1.0, "farm": 0.0},
+    {"src": "niche.radio.notes", "dst": "wiki.electronics", "endorse": 0.6, "farm": 0.0},
+    {"src": "ai-synergy.farm", "dst": "niche.radio.notes", "endorse": 1.0, "farm": 0.85},
+    {"src": "scam.parcel", "dst": "niche.radio.notes", "endorse": 1.0, "farm": 0.5},
+    {"src": "garden.compost", "dst": "niche.radio.notes", "endorse": 0.3, "farm": 0.0}
+  ]
+}

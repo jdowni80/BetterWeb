@@ -13,3 +13,6 @@ build/
 .cache/
 huggingface/
 .hf/
+bin/
+web/node_modules/
+data/runtime/
