@@ -15,7 +15,7 @@ A **browser and search engine** that favors human thought over AI slop, flags cl
 
 First slice: a **local judge CLI** that scores page text with the v0 schema and can re-rank mock search hits.
 
-Vision: [`docs/CONCEPT.md`](docs/CONCEPT.md) · Schema: [`docs/decision-schema-v0.md`](docs/decision-schema-v0.md)
+Vision: [`docs/CONCEPT.md`](docs/CONCEPT.md) · Schema: [`docs/decision-schema-v0.md`](docs/decision-schema-v0.md) · Web stack (no Chromium): [`docs/architecture-web-stack.md`](docs/architecture-web-stack.md)
 
 ## Setup
 

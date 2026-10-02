@@ -92,10 +92,16 @@ Exact networking (DHT, ActivityPub-like feeds, BitTorrent-style index packs) is 
 
 ## First build slice (suggested)
 
-1. Local **judge service** wrapping GLiNER2.5-Decide with the v0 schema.
-2. **CLI / small UI**: paste URL or HTML text → structured badges + scores.
-3. Tiny **result scorer**: mock search hits re-ranked by judge outputs.
+1. Local **judge service** wrapping GLiNER2.5-Decide with the v0 schema. *(shipped: `betterweb-judge`)*
+2. **CLI / small UI**: paste URL or HTML text → structured badges + scores. *(shipped)*
+3. Tiny **result scorer**: mock search hits re-ranked by judge outputs. *(shipped)*
 4. Seed list of niche “good web” sites for discovery demos.
+
+## Web stack (no Chromium)
+
+Search and browse are split: we **own crawl/index/rank/judgment**; we **do not** rebuild Blink. Live-web fetch uses HTTP + HTML extract, with optional non-Chromium headless (Lightpanda) for JS pages. Human browsing targets Ladybird or Servo — never Electron/CEF.
+
+Full plan: [`architecture-web-stack.md`](architecture-web-stack.md).
 
 Browser shell and full decentralized crawl come after the judgment loop feels trustworthy.
 
