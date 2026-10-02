@@ -36,16 +36,17 @@ class RankedHit:
 def combine_score(relevance: float, hints: dict[str, float]) -> float:
     """
     score = relevance
-          + 0.35 * thought_quality
-          + niche_bonus
+          + 0.45 * thought_quality
           - slop_penalty
           - malice_penalty
+
+    Rank for human craft + quality — not obscurity.
+    niche_bonus is ignored (kept in hints for API stability; always 0).
     propaganda_flag is badge-only (does not silently delete).
     """
     return (
         float(relevance)
-        + 0.35 * hints.get("thought_quality", 3.0)
-        + hints.get("niche_bonus", 0.0)
+        + 0.45 * hints.get("thought_quality", 3.0)
         - hints.get("slop_penalty", 0.0)
         - hints.get("malice_penalty", 0.0)
     )

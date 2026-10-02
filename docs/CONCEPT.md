@@ -15,7 +15,7 @@ BetterWeb optimizes for **quality of thought** and **discoverability of the good
 | Human-first ranking | Prefer evidence of craft, specificity, and lived knowledge over keyword match and backlink mass |
 | Slop & bot filter | Demote AI-generated filler and automated spam; do not pretend every page is equal |
 | Propaganda flagging | Label *clear* political propaganda so users can see the signal — not silently rewrite reality |
-| Niche discovery | Make virtuous, non-malicious, obscure sites findable on purpose |
+| Niche discovery | Help people *find* obscure corners — but only elevate them when they are human + high quality (obscurity alone is not merit) |
 | Local-first privacy | No behavioral dossier; browsing and judgment stay on-device by default |
 | No ads | No auction over attention; no “sponsored” poison in results |
 | Decentralized | Shared indexes and reputations can federate; no mandatory central tracker |
@@ -63,9 +63,11 @@ Blend at query time:
 
 1. **Lexical / semantic relevance** to the query (BM25-class IR).
 2. **CraftRank** offline authority \(r_i\) (earned endorsements only).
-3. **Decision scores** from the local model (quality, human-likeness, malice, ads).
-4. **Community attestations** (optional, signed, portable) — “this niche site is real and useful.”
+3. **Decision scores** from the local model — **thought quality + human craft** first; malice/slop/ads as penalties.
+4. **Community attestations** (optional, signed, portable) — “this site is real and useful,” not “this site is obscure.”
 5. **Personal taste** — on-device preferences; never uploaded by default.
+
+**Niche is not a rank feature.** Rarity labels may badge or feed an explore UI *after* craft thresholds; they must not outrank clear human quality writing just for being uncommon.
 
 Propaganda is **surfaced as a flag**, not deleted. Users stay in control of filters. Propaganda↔propaganda link loops are damped so they cannot PageRank themselves into dominance.
 

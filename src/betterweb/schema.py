@@ -61,9 +61,12 @@ PAGE_SCHEMA: dict[str, Any] = {
     "niche_value": {
         "labels": {
             "common": "Mainstream / widely duplicated topic coverage",
-            "specialist_useful": "Useful specialist or hobbyist knowledge",
+            "specialist_useful": (
+                "Specialist or hobbyist topic — descriptive only; not a quality score"
+            ),
             "rare_gem": (
-                "Hard-to-find virtuous niche corner: unique, careful, non-malicious"
+                "Uncommon corner of the web — descriptive only; rank still depends "
+                "on human craft and thought quality, never on obscurity alone"
             ),
         },
     },
@@ -90,6 +93,19 @@ def badges_from_decisions(decisions: dict[str, Any]) -> list[str]:
         if str(decisions.get(field, "")).lower() == value.lower():
             if badge not in found:
                 found.append(badge)
+
+    authorship = str(decisions.get("authorship_likeness", "")).lower()
+    try:
+        quality = float(str(decisions.get("thought_quality", "0")))
+    except ValueError:
+        quality = 0.0
+    human_enough = authorship == "human_crafted" or (
+        authorship == "mixed" and quality >= 4
+    )
+
+    # Niche badges require craft — obscurity alone is not a virtue signal.
+    if not human_enough or quality < 4:
+        found = [b for b in found if b not in {"rare_gem", "niche"}]
 
     # Coherence with ranking constraints in decision-schema-v0.md
     if str(decisions.get("bot_spam", "")).lower() == "yes":

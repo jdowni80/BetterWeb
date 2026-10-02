@@ -32,14 +32,22 @@ From GLiNER2.5-Decide / v0 schema (already in `betterweb-judge`):
 | Input | Effect on \(q_i\) |
 | --- | --- |
 | `thought_quality` high | Raise prior |
-| `authorship_likeness = human_crafted` | Raise prior |
-| `niche_value = rare_gem / specialist_useful` | Raise prior (discoverability) |
+| `authorship_likeness = human_crafted` (low slop penalty) | Raise prior |
+| `niche_value` | **No rank effect** — descriptive only (see below) |
 | `synthetic_filler` / `bot_spam` | Crush prior |
 | `malice = scam_or_harm` | Near-zero / hard demote |
 | Ad-surface heuristics (affiliate density, popunders, endless “Buy now” chrome) | Demote prior *(schema head TBD: `ad_surface`)* |
 | `propaganda_signal = clear` | **Does not zero \(q_i\)** — sets flag \(p_i\); see §Propaganda |
 
-\(q_i \in (0, 1]\). Scam pages ≈ floor. Empty AI filler ≈ very low. Crafted niche notes ≈ high.
+\(q_i \in (0, 1]\). Scam pages ≈ floor. Empty AI filler ≈ very low. High-craft human writing ≈ high — **whether or not it is niche**.
+
+### Niche is not a virtue score
+
+We want obscure *good* corners to remain findable. That does **not** mean “boost because rare.”
+
+- **Rank for:** human craft + thought quality + earned endorsements (CraftRank).
+- **Niche labels:** metadata / badges / optional explore surfaces — only after craft thresholds are met.
+- **Never:** promote low-quality or synthetic pages just because few people link to them.
 
 ### 2. Endorsement edges — not all links are votes
 
@@ -84,12 +92,13 @@ This is still \(O(\text{edges} \times \text{iters})\) — laptop-fast for millio
 \mathrm{score}(q, i) =
 \mathrm{BM25}(q,i)
 \cdot (1 + \gamma_r r_i)
-\cdot (1 + \gamma_n \mathrm{niche}_i)
+\cdot \mathrm{qualityBoost}_i
 \cdot \mathrm{slopPenalty}_i
 \cdot \mathrm{malicePenalty}_i
 \cdot \mathrm{adPenalty}(q,i)
 \]
 
+- No \(\gamma_n \mathrm{niche}\) term. Obscurity is not merit.
 - Propaganda: multiply only if the **user** enables a strict filter; default is badge + optional soft damp, never a secret global blacklist  
 - Ads: stronger demotion when query intent is informational (`how`, `why`, `notes`, `repair`) vs transactional
 
@@ -99,8 +108,9 @@ This is still \(O(\text{edges} \times \text{iters})\) — laptop-fast for millio
 2. **Volume is suspicious.** Hosts that publish thousands of near-duplicate AI pages share a host-level prior cap.
 3. **Engagement ≠ merit.** No click-feedback loop that rewards ragebait (that recreates ad-tech).
 4. **Clusters don’t crown kings.** Dense mutual-link blocks get farm damping.
-5. **Open schemas.** \(q_i\) labels and weights are versioned; communities can fork thresholds; the algorithm stays auditable.
-6. **No ad auction.** There is no paid slot in \(\mathrm{score}\).
+5. **Obscurity ≠ merit.** Niche discovery must not become a loophole for low-quality pages.
+6. **Open schemas.** \(q_i\) labels and weights are versioned; communities can fork thresholds; the algorithm stays auditable.
+7. **No ad auction.** There is no paid slot in \(\mathrm{score}\).
 
 ## Propaganda axis (orthogonal)
 

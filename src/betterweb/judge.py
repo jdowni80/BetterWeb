@@ -95,9 +95,6 @@ def ranking_hints(decisions: dict[str, Any]) -> dict[str, float]:
     except ValueError:
         quality = 3.0
 
-    niche = str(decisions.get("niche_value", "common")).lower()
-    niche_bonus = {"common": 0.0, "specialist_useful": 0.8, "rare_gem": 1.6}.get(niche, 0.0)
-
     authorship = str(decisions.get("authorship_likeness", "unknown")).lower()
     slop_penalty = {
         "human_crafted": 0.0,
@@ -108,16 +105,17 @@ def ranking_hints(decisions: dict[str, Any]) -> dict[str, float]:
 
     if str(decisions.get("bot_spam", "")).lower() == "yes":
         slop_penalty += 2.0
-        niche_bonus = min(niche_bonus, 0.0)
 
     malice = str(decisions.get("malice", "benign")).lower()
     malice_penalty = {"benign": 0.0, "uncertain": 0.7, "scam_or_harm": 5.0}.get(malice, 0.0)
 
     propaganda_flag = 1.0 if str(decisions.get("propaganda_signal", "")).lower() == "clear" else 0.0
 
+    # Niche is metadata for discovery UI — never a rank bonus by itself.
+    # Obscurity without craft must not outrank clear, high-quality human writing.
     return {
         "thought_quality": quality,
-        "niche_bonus": niche_bonus,
+        "niche_bonus": 0.0,
         "slop_penalty": slop_penalty,
         "malice_penalty": malice_penalty,
         "propaganda_flag": propaganda_flag,

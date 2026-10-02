@@ -25,13 +25,12 @@ def _clamp01(x: float) -> float:
 
 
 def prior_from_hints(hints: dict[str, float], *, propaganda_flag: float = 0.0) -> float:
-    """Map judgment ranking_hints → CraftRank page prior q_i."""
+    """Map judgment ranking_hints → CraftRank page prior q_i (craft/quality only)."""
     quality = float(hints.get("thought_quality", 3.0)) / 5.0
-    niche = float(hints.get("niche_bonus", 0.0))
-    niche_term = min(niche / 1.6, 1.0) * 0.15
     slop = float(hints.get("slop_penalty", 0.0))
     malice = float(hints.get("malice_penalty", 0.0))
-    q = 0.15 + 0.7 * quality + niche_term
+    # Niche must not inflate prior — obscurity ≠ merit.
+    q = 0.15 + 0.85 * quality
     q *= max(0.05, 1.0 - 0.25 * slop)
     q *= max(0.02, 1.0 - 0.35 * malice)
     # Propaganda does not zero prior; graph damping handles amplification.
