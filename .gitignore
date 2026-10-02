@@ -5,8 +5,9 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
-dist/
-build/
+/dist/
+/build/
+web/node_modules/
 .DS_Store
 *.pt
 *.bin
