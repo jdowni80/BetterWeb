@@ -3,12 +3,25 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from betterweb.schema import PAGE_SCHEMA, SCHEMA_VERSION, badges_from_decisions
 
 DEFAULT_MODEL = "fastino/GLiNER2.5-Decide"
+
+# Zero-shot Decide sometimes tags marketing filler as propaganda.
+# Until we fine-tune, require a political cue before keeping `clear`.
+_POLITICAL_CUE = re.compile(
+    r"\b("
+    r"vote|voting|election|ballot|campaign|candidate|partisan|party|"
+    r"democrat|republican|congress|parliament|senator|president|"
+    r"regime|geopolitic\w*|patriot|propaganda|mobilize|mobilise|"
+    r"left[- ]wing|right[- ]wing|liberal elite|deep state"
+    r")\b",
+    re.IGNORECASE,
+)
 
 
 @dataclass
@@ -63,6 +76,15 @@ def _normalize_decisions(raw: Any) -> dict[str, Any]:
         else:
             decisions[key] = value
     return decisions
+
+
+def apply_v0_guards(decisions: dict[str, Any], text: str) -> dict[str, Any]:
+    """Conservative post-filters for known zero-shot failure modes."""
+    out = dict(decisions)
+    prop = str(out.get("propaganda_signal", "")).lower()
+    if prop == "clear" and not _POLITICAL_CUE.search(text):
+        out["propaganda_signal"] = "uncertain"
+    return out
 
 
 def ranking_hints(decisions: dict[str, Any]) -> dict[str, float]:
@@ -146,7 +168,7 @@ class PageJudge:
         else:
             raw_dict = {"result": raw}
 
-        decisions = _normalize_decisions(raw)
+        decisions = apply_v0_guards(_normalize_decisions(raw), text)
         badges = badges_from_decisions(decisions)
         hints = ranking_hints(decisions)
         return Judgment(

@@ -39,8 +39,10 @@ betterweb-judge judge --file examples/pages/ai-slop.txt --pretty
 betterweb-judge judge --url 'https://example.com' --pretty
 
 # Optional device hint for AutoExtractor
-betterweb-judge --device mps judge --text 'short sample' --pretty
+betterweb-judge judge --text 'short sample' --pretty --device mps
 ```
+
+`--url` needs outbound HTTPS from this machine. If fetch fails, use `--file` / `--text`.
 
 Output includes `decisions`, `badges`, and `ranking_hints`.
 

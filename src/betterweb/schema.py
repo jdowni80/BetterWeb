@@ -32,14 +32,13 @@ PAGE_SCHEMA: dict[str, Any] = {
         },
     },
     "propaganda_signal": {
-        "labels": {
-            "clear": (
-                "Clear political propaganda: one-sided mobilization messaging, "
-                "slogan-heavy persuasion, not ordinary opinion or news reporting"
-            ),
-            "none": "No clear propaganda signal",
-            "uncertain": "Politically charged but not clearly propaganda",
-        },
+        "labels": ["clear", "none", "uncertain"],
+        "prompt": (
+            "Is this clear political propaganda that mobilizes for or against a "
+            "party, government, candidate, or geopolitical cause? Answer clear "
+            "only for political mobilization. Corporate marketing, SEO filler, "
+            "product copy, and ordinary non-political blogs are none."
+        ),
     },
     "malice": {
         "labels": {
@@ -91,4 +90,10 @@ def badges_from_decisions(decisions: dict[str, Any]) -> list[str]:
         if str(decisions.get(field, "")).lower() == value.lower():
             if badge not in found:
                 found.append(badge)
+
+    # Coherence with ranking constraints in decision-schema-v0.md
+    if str(decisions.get("bot_spam", "")).lower() == "yes":
+        found = [b for b in found if b not in {"rare_gem", "niche", "high_thought"}]
+    if str(decisions.get("malice", "")).lower() == "scam_or_harm":
+        found = [b for b in found if b not in {"rare_gem", "niche", "high_thought", "human_craft"}]
     return found

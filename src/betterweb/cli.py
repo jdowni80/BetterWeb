@@ -12,6 +12,24 @@ from betterweb.judge import DEFAULT_MODEL, PageJudge
 from betterweb.rank import rerank_from_decisions, rerank_hits
 
 
+def _add_common_flags(target: argparse.ArgumentParser) -> None:
+    target.add_argument(
+        "--model",
+        default=DEFAULT_MODEL,
+        help=f"Hugging Face model id (default: {DEFAULT_MODEL})",
+    )
+    target.add_argument(
+        "--device",
+        default=None,
+        help="Optional map_location for AutoExtractor (cpu, mps, cuda)",
+    )
+    target.add_argument(
+        "--pretty",
+        action="store_true",
+        help="Pretty-print JSON",
+    )
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="betterweb-judge",
@@ -20,25 +38,11 @@ def _build_parser() -> argparse.ArgumentParser:
             "bots, propaganda, quality, and niche value."
         ),
     )
-    parser.add_argument(
-        "--model",
-        default=DEFAULT_MODEL,
-        help=f"Hugging Face model id (default: {DEFAULT_MODEL})",
-    )
-    parser.add_argument(
-        "--device",
-        default=None,
-        help="Optional map_location for AutoExtractor (cpu, mps, cuda)",
-    )
-    parser.add_argument(
-        "--pretty",
-        action="store_true",
-        help="Pretty-print JSON",
-    )
 
     sub = parser.add_subparsers(dest="command", required=True)
 
     judge = sub.add_parser("judge", help="Judge text, a file, or a URL")
+    _add_common_flags(judge)
     src = judge.add_mutually_exclusive_group(required=True)
     src.add_argument("--text", help="Raw text to judge")
     src.add_argument("--file", type=Path, help="Path to .txt or .html")
@@ -49,6 +53,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "rerank",
         help="Re-rank mock search hits (JSON list) with the local judge",
     )
+    _add_common_flags(rerank)
     rerank.add_argument(
         "hits",
         type=Path,

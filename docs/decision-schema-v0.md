@@ -37,3 +37,4 @@ score = relevance
 - GLiNER2.5-Decide does **not** explain or debate; it scores schema answers. Rubrics live in label descriptions + fine-tuning data.
 - Start with short extracts (title + meta + lead paragraphs), not full HTML dumps.
 - Keep “propaganda” narrow: **clear** propaganda, not “I disagree with this essay.”
+- v0 runtime guard: if the model returns `propaganda_signal=clear` but the text has no political cue terms, demote to `uncertain` (zero-shot false positives on marketing filler). Fine-tuning should replace this.
