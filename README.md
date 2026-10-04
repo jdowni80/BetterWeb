@@ -11,22 +11,30 @@ A **browser and search engine** that favors human thought over AI slop, flags cl
 - **Decentralized & local-first** — no ad auction, no behavioral dossier, no Chromium
 - **Open-weight decisions** — local schema judgments via [GLiNER2.5-Decide](https://huggingface.co/fastino/GLiNER2.5-Decide)
 
-## Prototype app
+## Product surface (Mac)
 
-UI rebuilt with [UI Design Brain](.cursor/skills/ui-design-brain) patterns (search field, segmented control, result list, skeleton/empty states, skip link, semantic badges).
-
-Local search UI wired to:
+BetterWeb ships as a **native Mac app**: Apheleia-style vertical tabs + omnibox chrome, **Servo** for page rendering (no Chromium, no WKWebView), and the local CraftRank search API as a sidecar.
 
 | Piece | Role |
 | --- | --- |
-| **CraftRank** | Ranking authority (always on) |
-| **Lightpanda** | Non-Chromium fetch / JS page load |
-| **Servo** | Browse adapter (if installed) |
-| **Ladybird** | Browse adapter (if installed) |
+| **SwiftUI chrome** (`macos/`) | Tabs, URL/search bar, new-tab search UI, settings |
+| **betterweb-browse** (`rust/browse/`) | Out-of-process Servo (`libservo`) → RGBA frames |
+| **CraftRank API** (`src/betterweb/`) | Live/local search, judgment, ingest |
+| **Lightpanda** | Optional non-Chromium JS fetch for indexing |
 
 ```bash
 cd ~/Documents/GitHub/BetterWeb
-chmod +x scripts/run_prototype.sh
+chmod +x scripts/run_mac_app.sh
+./scripts/run_mac_app.sh
+```
+
+This builds the Servo helper, then launches the Mac chrome. The app starts the Python search sidecar on `127.0.0.1:8742` and the Servo browse helper for page views.
+
+## Prototype web UI (dev fallback)
+
+The Vite UI remains useful for search-only work without the Mac shell:
+
+```bash
 ./scripts/run_prototype.sh
 ```
 
@@ -54,8 +62,8 @@ cd web && npm install && npm run dev   # http://127.0.0.1:8743
 Optional engines:
 
 - Lightpanda binary → `bin/lightpanda` (script downloads macOS aarch64 nightly; telemetry off via `LIGHTPANDA_DISABLE_TELEMETRY=true`)
-- Servo → [servo.org/download](https://servo.org/download/) → `/Applications/Servo.app`
-- Ladybird → [ladybird.org](https://ladybird.org/) when you have a local build/app
+- In-app Servo → `cargo build --release` in `rust/browse` (or `BETTERWEB_BROWSE`)
+- Ladybird → optional external open later ([ladybird.org](https://ladybird.org/)); not the embed path
 
 Docs: [`docs/CONCEPT.md`](docs/CONCEPT.md) · [`docs/craftrank.md`](docs/craftrank.md) · [`docs/architecture-web-stack.md`](docs/architecture-web-stack.md)
 
@@ -72,11 +80,14 @@ python examples/craftrank_demo.py
 ## Layout
 
 ```text
+macos/           # SwiftUI Mac browser chrome
+rust/browse/     # Servo browse helper (JSON-lines IPC)
 src/betterweb/   # judge, CraftRank, engines, search, API
-web/             # Vite UI
+web/             # Vite search UI (dev fallback)
 data/seed/       # offline corpus for prototype search
 bin/             # local Lightpanda (gitignored)
 docs/            # concept + architecture
+scripts/         # run_mac_app.sh, run_prototype.sh
 ```
 
 ## Remote

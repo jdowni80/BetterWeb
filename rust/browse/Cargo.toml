@@ -1,0 +1,32 @@
+[package]
+name = "betterweb-browse"
+version = "0.1.0"
+edition = "2021"
+description = "BetterWeb Servo browse helper — independent engine, no Chromium/WKWebView"
+license = "MIT"
+publish = false
+
+[[bin]]
+name = "betterweb-browse"
+path = "src/main.rs"
+
+[features]
+default = ["servo-engine"]
+servo-engine = ["dep:servo", "dep:dpi", "dep:euclid", "dep:rustls", "dep:memmap2"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+url = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+dpi = { version = "0.1", optional = true }
+euclid = { version = "0.22", optional = true }
+memmap2 = { version = "0.9", optional = true }
+rustls = { version = "0.23", optional = true, default-features = false, features = ["aws-lc-rs"] }
+servo = { version = "0.6.0", optional = true, default-features = false, features = [
+  "baked-in-resources",
+  "clipboard",
+  "js_jit",
+] }

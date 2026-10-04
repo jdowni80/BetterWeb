@@ -6,12 +6,14 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from betterweb.engines import engine_statuses, open_with_engine
 from betterweb.judge import PageJudge
+from betterweb.media import MediaError, native_master_playlist
+from betterweb.media import resolve as resolve_media
 from betterweb.search import SearchIndex
 from betterweb.search.ingest import ingest_url
 from betterweb.search.live import live_search
@@ -138,6 +140,25 @@ def open_url(body: OpenBody) -> dict:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@app.get("/api/media/resolve")
+def media_resolve(url: str = Query(..., min_length=1)) -> dict:
+    try:
+        return resolve_media(url)
+    except MediaError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.get("/api/media/hls/{video_id}.m3u8")
+def media_hls(video_id: str) -> Response:
+    try:
+        body = native_master_playlist(video_id)
+    except MediaError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Playlist fetch failed: {exc}") from exc
+    return Response(content=body, media_type="application/vnd.apple.mpegurl")
+
+
 @app.post("/api/seed/reload")
 def reload_seed() -> dict:
     n = INDEX.load_seed(SEED_PATH)
@@ -152,14 +173,36 @@ if WEB_DIST.is_dir():
         return FileResponse(WEB_DIST / "index.html")
 
 
+def _exit_with_parent(parent_pid: int) -> None:
+    """Exit when the embedding app dies so no stale sidecar keeps serving old code."""
+    import os
+    import threading
+    import time
+
+    def watch() -> None:
+        while True:
+            time.sleep(1.0)
+            if os.getppid() != parent_pid:
+                os._exit(0)
+
+    threading.Thread(target=watch, name="parent-watchdog", daemon=True).start()
+
+
 def main() -> None:
+    import os
+
     import uvicorn
+
+    parent = os.environ.get("BETTERWEB_PARENT_PID")
+    if parent and parent.isdigit():
+        _exit_with_parent(int(parent))
 
     uvicorn.run(
         "betterweb.app.main:app",
         host="127.0.0.1",
-        port=8742,
+        port=int(os.environ.get("BETTERWEB_PORT", "8742")),
         reload=False,
+        log_level=os.environ.get("BETTERWEB_LOG_LEVEL", "info"),
     )
 
 

@@ -101,4 +101,14 @@ def extract_from_url(url: str, *, timeout: int = DEFAULT_TIMEOUT) -> PageExtract
         timeout=timeout,
     )
     response.raise_for_status()
-    return extract_from_html(response.text, url=url, source="url")
+    return extract_from_html(_decode_body(response), url=url, source="url")
+
+
+def _decode_body(response: requests.Response) -> str:
+    """Decode HTML without requests' ISO-8859-1 fallback (it garbles UTF-8 pages)."""
+    if "charset=" in response.headers.get("content-type", "").lower():
+        return response.text
+    try:
+        return response.content.decode("utf-8")
+    except UnicodeDecodeError:
+        return response.content.decode(response.apparent_encoding or "latin-1", errors="replace")

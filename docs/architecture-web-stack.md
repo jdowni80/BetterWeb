@@ -51,18 +51,32 @@ Own the search pipeline. No browser shell required.
 
 This is how we “access the actual WWW” without installing Chrome as a dependency.
 
-### Phase B — Human browser without Chromium
+### Phase B — Human browser without Chromium / WKWebView
 
-Do **not** fork Chromium/Electron/CEF.
+Do **not** fork Chromium/Electron/CEF. Do **not** build chrome around WKWebView multi-webview hacks (Apheleia’s pain).
 
 | Option | Role for BetterWeb | Fit |
 | --- | --- | --- |
-| **[Ladybird](https://ladybird.org/)** | Long-term browse shell | From-scratch engine, non-profit, no search-deal monetization, Linux/macOS alpha targeted 2026. Closest values match. |
-| **[Servo](https://servo.org/)** | Embeddable engine | Rust, crates.io embedding + emerging C API; good if we want a custom chrome/UI around an independent engine sooner. |
-| **WebKit (system)** | Temporary macOS-only viewer | Not Chromium, but Apple-controlled. Acceptable only as a thin “open this URL” bridge — never the crawler, never the telemetry story. |
-| **Chromium / Electron** | Rejected | Bloat + Google-shaped incentives; contradicts the premise. |
+| **[Servo](https://servo.org/)** (`libservo`) | **v1 page renderer** | Embeddable Rust engine; `SoftwareRenderingContext` → RGBA frames into native Swift chrome via `betterweb-browse` |
+| **Native SwiftUI chrome** | Product shell | Apheleia IA (vertical tabs, omnibox, NTP search) rewritten natively — overlays work without z-order IPC hacks |
+| **[Ladybird](https://ladybird.org/)** | Optional external / long-term | Strong values match; **no shippable embed SDK yet** — keep as future spawn/open, not v1 dependency |
+| **WebKit (system)** | Rejected for BetterWeb chrome/content | Apple-controlled; same class of embedder traps we left behind |
+| **Chromium / Electron** | Rejected | Bloat + Google-shaped incentives; contradicts the premise |
 
-**Practical browse plan:** keep BetterWeb’s product chrome (search UI, badges, local index, filters) in our app; embed Ladybird or Servo for page view when ready. Until then, search + judge work fully without a full browser.
+**Locked browse plan:** BetterWeb.app owns chrome + CraftRank search sidecar; pages render in-process-helper Servo (`rust/browse`). Search works without the browser shell; the Mac app is the DuckDuckGo-style combined product.
+
+```text
+┌──────────────────────────────────────────────┐
+│  BetterWeb.app (SwiftUI)                     │
+│  vertical tabs · omnibox · search NTP        │
+└─────────┬──────────────────────────┬─────────┘
+          │ HTTP 127.0.0.1:8742      │ JSON-lines IPC
+          ▼                          ▼
+┌─────────────────────┐    ┌─────────────────────────┐
+│ Python sidecar      │    │ betterweb-browse        │
+│ CraftRank + fetch   │    │ Servo SoftwareRendering │
+└─────────────────────┘    └─────────────────────────┘
+```
 
 ### Phase C — Decentralized discovery
 
@@ -74,6 +88,7 @@ Do **not** fork Chromium/Electron/CEF.
 ## What we refuse
 
 - Electron / CEF / “privacy Chromium” skins as the architecture.
+- WKWebView as the BetterWeb page renderer or multi-webview chrome host.
 - Centralized answer-engine that replaces reading pages.
 - Silent global censorship of politics (flags + user filters only).
 - Default telemetry or account-gated search.
@@ -91,11 +106,12 @@ Ladybird’s FAQ-scale reality: independent LibWeb/LibJS is already hundreds of 
 
 ## Concrete next build slices
 
-1. **Crawler v0** — polite HTTP fetch + frontier + WARC, wired to existing judge.
-2. **Index v0** — BM25 over judged docs; CLI `betterweb-search "query"`.
-3. **JS fetch adapter** — optional Lightpanda path when extract text is empty.
-4. **Seed pack** — curated niche hosts + optional Common Crawl bootstrap.
-5. **Browse spike** — evaluate Servo embed vs waiting on Ladybird alpha; document decision.
+1. **Mac app v1** — Swift chrome + Servo helper + search sidecar (`scripts/run_mac_app.sh`). *(in tree)*
+2. **Crawler v0** — polite HTTP fetch + frontier + WARC, wired to existing judge.
+3. **Index v0** — BM25 over judged docs; CLI `betterweb-search "query"`.
+4. **JS fetch adapter** — optional Lightpanda path when extract text is empty.
+5. **Multi-WebView tabs** — one Servo WebView per tab (v1 swaps a single surface).
+6. **Ladybird** — revisit when an embed SDK exists; until then optional external open only.
 
 ## References
 

@@ -17,3 +17,7 @@ huggingface/
 bin/
 data/runtime/
 .cursor/skills/ui-design-brain/.git
+rust/browse/target/
+macos/.build/
+.vibe-wise/
+.tmp-vibe-wise/

@@ -102,13 +102,11 @@ Exact networking (DHT, ActivityPub-like feeds, BitTorrent-style index packs) is 
 3. Tiny **result scorer**: mock search hits re-ranked by judge outputs. *(shipped)*
 4. Seed list of niche “good web” sites for discovery demos.
 
-## Web stack (no Chromium)
+## Web stack (no Chromium, no WKWebView)
 
-Search and browse are split: we **own crawl/index/rank/judgment**; we **do not** rebuild Blink. Live-web fetch uses HTTP + HTML extract, with optional non-Chromium headless (Lightpanda) for JS pages. Human browsing targets Ladybird or Servo — never Electron/CEF.
+Search and browse are split: we **own crawl/index/rank/judgment**; we **do not** rebuild Blink. Live-web fetch uses HTTP + HTML extract, with optional non-Chromium headless (Lightpanda) for JS pages. Human browsing uses **embedded Servo** inside BetterWeb.app (Swift chrome + `betterweb-browse` helper) — never Electron/CEF/WKWebView.
 
 Full plan: [`architecture-web-stack.md`](architecture-web-stack.md).
-
-Browser shell and full decentralized crawl come after the judgment loop feels trustworthy.
 
 ## Open questions
 

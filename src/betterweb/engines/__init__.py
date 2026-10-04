@@ -46,7 +46,25 @@ def lightpanda_path() -> str | None:
     return _which("lightpanda")
 
 
+def betterweb_browse_path() -> str | None:
+    """In-app Servo helper shipped with BetterWeb (preferred browse path)."""
+    env = os.environ.get("BETTERWEB_BROWSE")
+    if env and Path(env).is_file():
+        return env
+    local = REPO_ROOT / "rust" / "browse" / "target" / "release" / "betterweb-browse"
+    if local.is_file() and os.access(local, os.X_OK):
+        return str(local)
+    debug = REPO_ROOT / "rust" / "browse" / "target" / "debug" / "betterweb-browse"
+    if debug.is_file() and os.access(debug, os.X_OK):
+        return str(debug)
+    return _which("betterweb-browse")
+
+
 def servo_path() -> str | None:
+    # Prefer the BetterWeb-embedded Servo helper over a standalone Servo.app.
+    embedded = betterweb_browse_path()
+    if embedded:
+        return embedded
     env = os.environ.get("BETTERWEB_SERVO")
     if env and Path(env).exists():
         return env
@@ -101,28 +119,20 @@ def engine_statuses() -> list[EngineStatus]:
             ),
         ),
         EngineStatus(
+            id="ladybird",
+            name="Ladybird",
+            role="browse",
+            available=True,
+            path=lb,
+            detail="In-app LibWeb/LibJS — pages and media render via MediaServer",
+        ),
+        EngineStatus(
             id="servo",
             name="Servo",
             role="browse",
             available=sv is not None,
             path=sv,
-            detail=(
-                "Independent embeddable engine for human browsing"
-                if sv
-                else "Not installed — download from https://servo.org/download/"
-            ),
-        ),
-        EngineStatus(
-            id="ladybird",
-            name="Ladybird",
-            role="browse",
-            available=lb is not None,
-            path=lb,
-            detail=(
-                "From-scratch browser engine (preferred long-term shell)"
-                if lb
-                else "Not installed — build/install from https://ladybird.org/"
-            ),
+            detail="Retired as the page engine (kept only as an optional experiment)",
         ),
     ]
 
@@ -165,6 +175,16 @@ def open_with_engine(engine_id: str, url: str) -> dict:
         path = servo_path()
         if not path:
             raise RuntimeError("Servo not available")
+        if Path(path).name == "betterweb-browse":
+            # Primary browse path is the Mac app (IPC to this helper).
+            # Spawning a headless helper from the HTTP API has no frame consumer.
+            return {
+                "opened": False,
+                "engine": "servo",
+                "url": url,
+                "path": path,
+                "detail": "Use BetterWeb.app (scripts/run_mac_app.sh) for in-app Servo navigation",
+            }
         if path.endswith(".app") or "Servo.app" in path:
             subprocess.Popen(["open", "-a", "Servo", url])
         else:
