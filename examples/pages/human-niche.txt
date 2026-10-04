@@ -1,0 +1,8 @@
+Title: Notes from repairing a 1978 tube radio
+
+I spent Saturday tracing the heater wiring on a Zenith with a cold 50C5.
+The schematic in Rider's is close but the production board routes the
+dropper resistor under the tuner can, which nobody mentions online. After
+replacing the wax coupling cap on the volume control the hum dropped and
+the dial lamps came back. This is not a universal guide — just what I
+found on this chassis so the next person does not dig for an hour.

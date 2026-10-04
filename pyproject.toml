@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "betterweb"
+version = "0.1.0"
+description = "Local page judge for BetterWeb — filter slop, flag propaganda, score human quality."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "BetterWeb" }]
+dependencies = [
+  "gliner2[local]>=0.1.0",
+  "beautifulsoup4>=4.12",
+  "lxml>=5.0",
+  "requests>=2.31",
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "rank-bm25>=0.2.2",
+  "ddgs>=9.0",
+  "yt-dlp>=2026.8.19",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+betterweb-judge = "betterweb.cli:main"
+betterweb-app = "betterweb.app.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+betterweb = ["py.typed"]
