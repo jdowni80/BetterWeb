@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BetterWeb</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <header class="chrome">
+    <div class="brand">BetterWeb</div>
+    <form id="omni-form" class="omni" autocomplete="off">
+      <input id="omni" type="search" placeholder="Search the index, or paste a URL" autofocus>
+      <button type="submit">Go</button>
+    </form>
+    <div id="status" class="status" hidden></div>
+  </header>
+  <div class="workspace">
+    <aside id="results" class="results" hidden></aside>
+    <main class="stage">
+      <iframe id="frame" title="Page" hidden sandbox="allow-same-origin allow-popups allow-scripts allow-forms"></iframe>
+      <p id="empty" class="empty">Search the local index. Text pages render as HTML. Chromium is used when that is not enough.</p>
+    </main>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

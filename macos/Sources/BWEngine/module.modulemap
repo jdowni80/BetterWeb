@@ -1,0 +1,5 @@
+module BWEngine {
+    header "BWEngine.h"
+    link "BetterWebEngine"
+    export *
+}

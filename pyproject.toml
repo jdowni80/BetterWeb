@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "betterweb"
+version = "0.2.0"
+description = "BetterWeb owned search: Crawlee index, local CraftRank, no meta-search."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+  "beautifulsoup4>=4.12",
+  "lxml>=5.0",
+  "requests>=2.31",
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+judge = ["gliner2[local]>=0.1.0"]
+crawl = ["crawlee[beautifulsoup,playwright]>=0.6"]
+
+[project.scripts]
+betterweb-crawl = "betterweb.crawl:main"
+betterweb-search = "betterweb.cli:search_main"
+betterweb-app = "betterweb.app.main:main"
+betterweb-browse = "betterweb.app.main:browse_main"
+betterweb-indexd = "betterweb.indexd:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+betterweb = ["app/static/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

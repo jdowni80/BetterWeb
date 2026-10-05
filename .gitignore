@@ -1,0 +1,41 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local index, crawl queues, and notes
+data/
+storage/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+.vibe-wise/
+.tmp-vibe-wise/
+
+# Secrets
+.env
+.env.*
+
+# macOS / Swift
+.DS_Store
+macos/.build/
+macos/.swiftpm/
+*.dSYM/
+
+# App and package builds
+/dist/
+/build/
+
+# Rust / Node leftovers
+target/
+node_modules/
+
+# Downloaded binaries
+/bin/
