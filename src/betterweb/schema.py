@@ -117,3 +117,42 @@ def numeric_decisions(decisions: dict[str, Any]) -> dict[str, Any]:
     for key in ("thought_quality", "commercial_bias", "ad_use", "commercial_promotion", "citation_use"):
         out[key] = level_to_unit(decisions.get(key), 0.0)
     return out
+
+
+def badges_from_decisions(decisions: dict[str, Any]) -> list[str]:
+    badges: list[str] = []
+    authorship = str(decisions.get("authorship_likeness", "")).lower()
+    if as_bool(decisions.get("is_ai_generated")) or authorship == "synthetic_filler":
+        badges.append("ai_slop")
+    if as_bool(decisions.get("is_human_generated")) or authorship == "human_crafted":
+        badges.append("human_craft")
+    for field, value, badge in (
+        ("bot_spam", "yes", "bot_spam"),
+        ("propaganda_signal", "clear", "propaganda"),
+        ("malice", "scam_or_harm", "malicious"),
+    ):
+        if str(decisions.get(field, "")).lower() == value:
+            badges.append(badge)
+    niche = str(decisions.get("niche_value", "")).lower()
+    raw_quality = str(decisions.get("thought_quality", "")).strip()
+    try:
+        quality = float(raw_quality)
+    except ValueError:
+        quality = level_to_unit(raw_quality, 0.0) * 5.0
+    if raw_quality not in {"1", "2", "3", "4", "5"} and quality <= 1.0:
+        quality *= 5.0
+    human_enough = as_bool(decisions.get("is_human_generated")) or authorship == "human_crafted" or (
+        authorship == "mixed" and quality >= 4
+    )
+    if human_enough and quality >= 4:
+        if niche == "rare_gem":
+            badges.append("rare_gem")
+        elif niche == "specialist_useful":
+            badges.append("niche")
+    if quality >= 4:
+        badges.append("high_thought")
+    if str(decisions.get("bot_spam", "")).lower() == "yes":
+        badges = [badge for badge in badges if badge not in {"rare_gem", "niche", "high_thought"}]
+    if str(decisions.get("malice", "")).lower() == "scam_or_harm":
+        badges = [badge for badge in badges if badge not in {"rare_gem", "niche", "high_thought", "human_craft"}]
+    return badges

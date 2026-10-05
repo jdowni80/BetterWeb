@@ -6,7 +6,6 @@ from typing import Any
 
 from betterweb.store import PageStore
 
-# First-cut mix until the UI owns weights. Craft slightly leads relevance.
 CRAFT_WEIGHT = 0.55
 RELEVANCE_WEIGHT = 0.45
 

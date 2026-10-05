@@ -70,6 +70,43 @@ def heuristic_decisions(title: str, text: str, url: str = "") -> dict[str, Any]:
     )
 
 
+def ranking_hints(decisions: dict[str, Any]) -> dict[str, float]:
+    quality_raw = decisions.get("thought_quality", 0.3)
+    try:
+        quality = float(quality_raw)
+    except (TypeError, ValueError):
+        quality = {
+            "none": 0.0,
+            "low": 0.2,
+            "medium": 0.5,
+            "high": 0.8,
+            "extreme": 1.0,
+        }.get(str(quality_raw).strip().lower(), 0.3)
+    if str(quality_raw).strip() not in {"1", "2", "3", "4", "5"} and quality <= 1.0:
+        quality *= 5.0
+
+    authorship = str(decisions.get("authorship_likeness", "unknown")).lower()
+    slop_penalty = {
+        "human_crafted": 0.0,
+        "mixed": 0.4,
+        "synthetic_filler": 1.5,
+        "unknown": 0.2,
+    }.get(authorship, 0.2)
+    if str(decisions.get("bot_spam", "")).lower() == "yes":
+        slop_penalty += 2.0
+
+    malice = str(decisions.get("malice", "benign")).lower()
+    malice_penalty = {"benign": 0.0, "uncertain": 0.7, "scam_or_harm": 5.0}.get(malice, 0.0)
+    propaganda_flag = 1.0 if str(decisions.get("propaganda_signal", "")).lower() == "clear" else 0.0
+    return {
+        "thought_quality": quality,
+        "niche_bonus": 0.0,
+        "slop_penalty": slop_penalty,
+        "malice_penalty": malice_penalty,
+        "propaganda_flag": propaganda_flag,
+    }
+
+
 def probe(judge: PageJudge | None) -> str:
     if judge is None:
         return "gliner disabled; heuristic fallback"

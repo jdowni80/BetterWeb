@@ -1,0 +1,62 @@
+[
+  {
+    "id": "1",
+    "title": "Zenith 1978 heater wiring notes",
+    "url": "https://example.invalid/radio-notes",
+    "snippet": "Tracing a cold 50C5 on a production Zenith chassis; Rider schematic mismatch and wax cap fix.",
+    "relevance": 0.72,
+    "decisions": {
+      "authorship_likeness": "human_crafted",
+      "bot_spam": "no",
+      "propaganda_signal": "none",
+      "malice": "benign",
+      "thought_quality": "5",
+      "niche_value": "rare_gem"
+    }
+  },
+  {
+    "id": "2",
+    "title": "Unlock Synergies With AI Transformation",
+    "url": "https://example.invalid/ai-synergies",
+    "snippet": "In today's rapidly evolving digital landscape, businesses must leverage cutting-edge solutions...",
+    "relevance": 0.91,
+    "decisions": {
+      "authorship_likeness": "synthetic_filler",
+      "bot_spam": "uncertain",
+      "propaganda_signal": "none",
+      "malice": "benign",
+      "thought_quality": "1",
+      "niche_value": "common"
+    }
+  },
+  {
+    "id": "3",
+    "title": "Urgent: Stand With Us Against Them",
+    "url": "https://example.invalid/mobilize-now",
+    "snippet": "Share this now. Anyone who questions the plan is the enemy. Victory or betrayal — choose.",
+    "relevance": 0.8,
+    "decisions": {
+      "authorship_likeness": "mixed",
+      "bot_spam": "no",
+      "propaganda_signal": "clear",
+      "malice": "uncertain",
+      "thought_quality": "2",
+      "niche_value": "common"
+    }
+  },
+  {
+    "id": "4",
+    "title": "Your package is held — confirm banking details",
+    "url": "https://example.invalid/parcel-verify",
+    "snippet": "Click here within 1 hour or your shipment will be destroyed. Enter card CVV to release.",
+    "relevance": 0.65,
+    "decisions": {
+      "authorship_likeness": "synthetic_filler",
+      "bot_spam": "yes",
+      "propaganda_signal": "none",
+      "malice": "scam_or_harm",
+      "thought_quality": "1",
+      "niche_value": "common"
+    }
+  }
+]
