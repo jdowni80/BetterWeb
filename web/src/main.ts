@@ -123,7 +123,20 @@ function escapeHtml(s: string): string {
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function escapeWebUrl(value: string): string {
+  try {
+    const url = new URL(value);
+    if (url.protocol === "http:" || url.protocol === "https:") {
+      return escapeHtml(url.href);
+    }
+  } catch {
+    // Invalid URLs are rendered as inert links.
+  }
+  return "#";
 }
 
 function badgeClass(badge: string): string {
@@ -207,7 +220,7 @@ function renderHits(hits: Hit[]) {
       return `
       <article class="result">
         <h2 class="result-title">
-          <a href="${escapeHtml(hit.url)}" target="_blank" rel="noreferrer">
+          <a href="${escapeWebUrl(hit.url)}" target="_blank" rel="noreferrer">
             ${escapeHtml(hit.title)}
           </a>
         </h2>
@@ -216,9 +229,9 @@ function renderHits(hits: Hit[]) {
         <div class="result-meta">
           ${badges}
           <span class="badge badge-neutral">${escapeHtml(hit.fetch_engine.replaceAll("_", " "))}</span>
-          <button type="button" class="btn btn-tertiary btn-sm" data-open="servo" data-url="${escapeHtml(hit.url)}">Open in Servo</button>
-          <button type="button" class="btn btn-tertiary btn-sm" data-open="ladybird" data-url="${escapeHtml(hit.url)}">Open in Ladybird</button>
-          <span class="score">score ${hit.betterweb_score} · craft ${hit.craft}</span>
+          <button type="button" class="btn btn-tertiary btn-sm" data-open="servo" data-url="${escapeWebUrl(hit.url)}">Open in Servo</button>
+          <button type="button" class="btn btn-tertiary btn-sm" data-open="ladybird" data-url="${escapeWebUrl(hit.url)}">Open in Ladybird</button>
+          <span class="score">score ${escapeHtml(String(hit.betterweb_score))} · craft ${escapeHtml(String(hit.craft))}</span>
         </div>
       </article>`;
     })
