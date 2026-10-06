@@ -10,19 +10,13 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from betterweb.crawl import SEEDS
-from betterweb.extract import (
-    content_link_urls,
-    extract_from_url,
-    followable_citations,
-    sample_walk_urls,
-    should_expand,
-    should_follow,
-    should_follow_citations,
-)
-from betterweb.ingest import ingest_extract, is_js_host
+from betterweb.extract import extract_from_html, extract_from_url
+from betterweb import power
+from betterweb.ingest import enqueue_walk, ingest_extract, is_js_host
 from betterweb.store import INDEX_SIZE_LIMIT, PageStore
 
 SLEEP_SECONDS = 1.0
+SLEEP_BATTERY = 20.0
 PID_NAME = "indexd.pid"
 TELEPORT_P = 0.35
 _last_host: str | None = None
@@ -58,7 +52,7 @@ def _claim_lock(store: PageStore) -> Path | None:
 
 def _seed_queue(store: PageStore) -> None:
     for url in SEEDS:
-        if is_js_host(url) or store.was_seen(url):
+        if store.was_seen(url):
             continue
         store.enqueue(url)
 
@@ -68,62 +62,51 @@ def _remember_host(url: str) -> None:
     _last_host = urlparse(url).netloc.lower() or None
 
 
-def _walk_dests(source: str, html: str, *, citations_only: bool) -> list[str]:
-    raw = followable_citations(html, source, limit=80) if citations_only else content_link_urls(html, source)
-    dests: list[str] = []
-    for dest in raw:
-        if is_js_host(dest) or not should_follow(source, dest):
-            continue
-        dests.append(dest)
-    return dests
-
-
 def _enqueue_from(store: PageStore, source: str, html: str) -> None:
-    if should_expand(source, html):
-        dests = [dest for dest in _walk_dests(source, html, citations_only=False) if not store.was_seen(dest)]
-        for dest in sample_walk_urls(source, dests):
-            store.enqueue(dest)
-        return
-    if should_follow_citations(source, html):
-        dests = [dest for dest in _walk_dests(source, html, citations_only=True) if not store.was_seen(dest)]
-        for dest in sample_walk_urls(source, dests):
-            store.enqueue(dest)
+    enqueue_walk(store, source, html)
 
 
-def _read_html(url: str) -> str:
-    extract = extract_from_url(url)
-    return extract
+def _extract_page(url: str):
+    if is_js_host(url):
+        from betterweb.browse import playwright_html
+
+        html, err, final = playwright_html(url)
+        if not html:
+            raise RuntimeError(err or "playwright empty")
+        return extract_from_html(html, url=final or url, source="playwright")
+    return extract_from_url(url)
 
 
 def _fetch_one(store: PageStore, url: str) -> str:
-    if is_js_host(url) or store.was_seen(url):
+    if store.was_seen(url):
         store.mark_seen(url)
-        return "skip-js" if is_js_host(url) else "skip"
+        return "skip"
     try:
-        extract = _read_html(url)
+        extract = _extract_page(url)
     except Exception as exc:
         store.mark_seen(url)
         return f"fail {exc}"
-    ingest_extract(store, extract, fetch_engine="http", judge=None)
+    engine = "playwright" if is_js_host(url) else "http"
+    ingest_extract(store, extract, fetch_engine=engine, judge=None)
+    landed = extract.url or url
     store.mark_seen(url)
-    store.mark_harvested(url)
-    _enqueue_from(store, url, extract.html)
+    if landed != url:
+        store.mark_seen(landed)
+    store.mark_harvested(landed)
+    _enqueue_from(store, landed, extract.html)
     store.evict_to_budget()
     _remember_host(url)
     return "ok"
 
 
 def _harvest_one(store: PageStore, url: str) -> str:
-    if is_js_host(url):
-        store.mark_harvested(url)
-        return "skip-js"
     try:
-        extract = _read_html(url)
+        extract = _extract_page(url)
     except Exception as exc:
         store.mark_harvested(url)
         return f"harvest-fail {exc}"
-    _enqueue_from(store, url, extract.html)
-    store.mark_harvested(url)
+    _enqueue_from(store, extract.url or url, extract.html)
+    store.mark_harvested(extract.url or url)
     _remember_host(url)
     return "harvest"
 
@@ -162,6 +145,12 @@ def run(store: PageStore, *, once: bool = False, sleep: float = SLEEP_SECONDS) -
             if _parent_gone():
                 print("indexd parent gone", flush=True)
                 return
+            if not power.on_ac_power():
+                print("indexd on-battery", flush=True)
+                if once:
+                    return
+                time.sleep(SLEEP_BATTERY)
+                continue
             status = step(store)
             print(
                 f"indexd {status} pages={store.count()} bytes={store.db_bytes()}",

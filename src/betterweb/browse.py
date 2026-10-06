@@ -110,30 +110,32 @@ def reader_document(html: str, url: str) -> str:
     return str(soup)
 
 
-def _http_html(url: str) -> tuple[str, str | None]:
+def _http_html(url: str) -> tuple[str, str | None, str]:
     try:
         response = requests.get(
             url,
             timeout=12,
+            allow_redirects=True,
             headers={"User-Agent": USER_AGENT, "Accept": "text/html,application/xhtml+xml"},
         )
         response.raise_for_status()
+        landed = str(response.url or url)
         header = response.headers.get("content-type", "").lower()
         if "charset=" in header:
-            return response.text, None
+            return response.text, None, landed
         try:
-            return response.content.decode("utf-8"), None
+            return response.content.decode("utf-8"), None, landed
         except UnicodeDecodeError:
-            return response.content.decode(response.apparent_encoding or "latin-1", errors="replace"), None
+            return response.content.decode(response.apparent_encoding or "latin-1", errors="replace"), None, landed
     except Exception as exc:
-        return "", str(exc)
+        return "", str(exc), url
 
 
-def _playwright_html(url: str) -> tuple[str, str | None]:
+def playwright_html(url: str) -> tuple[str, str | None, str]:
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
-        return "", "Playwright is not installed (pip install -e '.[crawl]')"
+        return "", "Playwright is not installed (pip install -e '.[crawl]')", url
     try:
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=True)
@@ -141,11 +143,13 @@ def _playwright_html(url: str) -> tuple[str, str | None]:
             for pattern in TRACKER_PATTERNS:
                 page.route(pattern, lambda route: route.abort())
             page.goto(url, wait_until="domcontentloaded", timeout=25_000)
+            page.wait_for_timeout(1500)
             html = page.content()
+            landed = page.url or url
             browser.close()
-        return html, None
+        return html, None, landed
     except Exception as exc:
-        return "", str(exc)
+        return "", str(exc), url
 
 
 def open_page(url: str) -> BrowseView:
@@ -160,35 +164,35 @@ def open_page(url: str) -> BrowseView:
     if needs_chromium(url):
         return _live_view(url)
 
-    html, http_error = _http_html(url)
-    extract = extract_from_html(html, url=url, source="http") if html else None
-    http_works = bool(extract and not is_thin(extract) and not needs_chromium(url, html))
+    html, http_error, landed = _http_html(url)
+    extract = extract_from_html(html, url=landed, source="http") if html else None
+    http_works = bool(extract and not is_thin(extract) and not needs_chromium(landed, html))
     if http_works and extract is not None:
         return BrowseView(
-            url=url,
-            title=extract.title or url,
+            url=landed,
+            title=extract.title or landed,
             engine="html",
             mode="reader",
-            html=reader_document(html, url),
+            html=reader_document(html, landed),
         )
 
     if html or not http_error:
-        return _live_view(url, extract.title if extract else url)
+        return _live_view(landed, extract.title if extract else landed)
 
-    rendered, pw_error = _playwright_html(url)
+    rendered, pw_error, pw_landed = playwright_html(url)
     if rendered:
-        extract = extract_from_html(rendered, url=url, source="playwright")
+        extract = extract_from_html(rendered, url=pw_landed, source="playwright")
         if not is_thin(extract) or len(extract.text) >= _THIN_AFTER_PLAYWRIGHT:
-            if needs_chromium(url, rendered):
-                return _live_view(url, extract.title or url)
+            if needs_chromium(pw_landed, rendered):
+                return _live_view(pw_landed, extract.title or pw_landed)
             return BrowseView(
-                url=url,
-                title=extract.title or url,
+                url=pw_landed,
+                title=extract.title or pw_landed,
                 engine="playwright",
                 mode="reader",
-                html=reader_document(rendered, url),
+                html=reader_document(rendered, pw_landed),
             )
-        return _live_view(url, extract.title or url)
+        return _live_view(pw_landed, extract.title or pw_landed)
 
     reason = pw_error or http_error or "Could not load page."
     return BrowseView(url=url, title="", engine="webkit", mode="error", error=reason)

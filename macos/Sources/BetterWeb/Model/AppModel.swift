@@ -122,6 +122,7 @@ final class AppModel: ObservableObject {
     let browse = BrowseSession()
     let history = HistoryStore()
     let bookmarks = BookmarkStore()
+    private let powerMonitor = PowerMonitor()
 
     private var closedTabs: [ClosedTab] = []
     private var openedInHelper = Set<UUID>()
@@ -198,16 +199,30 @@ final class AppModel: ObservableObject {
         started = true
         startBrowseHelper()
         startSidecar()
-        indexer.start()
+        powerMonitor.handler = { [weak self] plugged in
+            self?.applyPowerState(plugged)
+        }
+        powerMonitor.start()
         syncBrowseToActiveTab()
     }
 
     func shutdown() {
         terminating = true
         persist()
+        powerMonitor.stop()
         browse.stopAndWait()
         indexer.stop()
         sidecar.stop()
+    }
+
+    private func applyPowerState(_ plugged: Bool) {
+        if plugged {
+            indexer.start()
+            AppLog.info("power: AC — indexer on")
+        } else {
+            indexer.stop()
+            AppLog.info("power: battery — indexer off")
+        }
     }
 
     private func startBrowseHelper() {
@@ -538,7 +553,6 @@ final class AppModel: ObservableObject {
     }
 
     func adoptEngineTab(id: UUID, url: String, opener: UUID?, activate shouldActivate: Bool) {
-        openedInHelper.insert(id)
         if tabs.contains(where: { $0.id == id }) {
             if shouldActivate { activate(id) }
             return
@@ -822,6 +836,22 @@ final class AppModel: ObservableObject {
 
         case .adoptedTab(let openerKey, let tabID, let url, let activate):
             adoptEngineTab(id: tabID, url: url, opener: openerKey.flatMap(UUID.init(uuidString:)), activate: activate)
+
+        case .userNavigate(let tabKey, let url, let reload):
+            guard let id = UUID(uuidString: tabKey) else { return }
+            mutate(id) { tab in
+                tab.content = .page(url: url)
+                tab.address = url
+            }
+            persist()
+            if reload {
+                runtime[id, default: TabRuntime()].loading = true
+                if browseState.isReady {
+                    browse.navigate(tab: id, url: url)
+                }
+            } else {
+                Task { await self.searchClient.visit(url: url) }
+            }
 
         case .closeRequested(let tabKey):
             if let id = UUID(uuidString: tabKey) { closeTab(id, force: true) }

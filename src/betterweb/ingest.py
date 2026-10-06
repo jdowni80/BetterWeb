@@ -4,7 +4,18 @@ from __future__ import annotations
 
 from urllib.parse import urlparse
 
-from betterweb.extract import PageExtract, clip_store_text, followable_citations
+from betterweb.extract import (
+    PageExtract,
+    clip_store_text,
+    content_link_urls,
+    extract_from_html,
+    extract_from_url,
+    followable_citations,
+    sample_walk_urls,
+    should_expand,
+    should_follow,
+    should_follow_citations,
+)
 from betterweb.judge import PageJudge, heuristic_decisions
 from betterweb.score import craftrank_score
 from betterweb.store import PageRow, PageStore, now_iso
@@ -74,3 +85,80 @@ def ingest_extract(
     )
     store.upsert(row)
     return row, cites
+
+
+def enqueue_walk(store: PageStore, source: str, html: str) -> None:
+    if should_expand(source, html):
+        raw = content_link_urls(html, source)
+    elif should_follow_citations(source, html):
+        raw = followable_citations(html, source, limit=80)
+    else:
+        return
+    dests = [
+        dest
+        for dest in raw
+        if should_follow(source, dest) and not store.was_seen(dest)
+    ]
+    for dest in sample_walk_urls(source, dests):
+        store.enqueue(dest)
+
+
+def _extract_for_visit(url: str, html: str) -> PageExtract | None:
+    try:
+        if is_js_host(url):
+            from betterweb.browse import playwright_html
+
+            rendered, _err, final = playwright_html(url)
+            if rendered:
+                return extract_from_html(rendered, url=final or url, source="playwright")
+            if html:
+                return extract_from_html(html, url=url, source="visit")
+            return None
+        if html:
+            return extract_from_html(html, url=url, source="visit")
+        return extract_from_url(url)
+    except Exception:
+        return None
+
+
+def index_visit(store: PageStore, url: str, html: str = "", title: str = "") -> str:
+    dest = urlparse(url)
+    if dest.scheme not in {"http", "https"} or not dest.netloc:
+        return "ignore"
+    url = url.split("#", 1)[0]
+    extract = _extract_for_visit(url, html)
+    if extract is None:
+        if store.get(url):
+            store.unharvest(url)
+            return "hub"
+        extract = PageExtract(source="visit", title=title or url, text="", url=url)
+    if title and not extract.title:
+        extract.title = title
+    landed = (extract.url or url).split("#", 1)[0]
+    extract.url = landed
+    body = extract.text.strip()
+    if not body:
+        extract.title = extract.title or title or landed
+        extract.text = extract.title
+        walk = False
+    else:
+        walk = bool(extract.html)
+    existing = store.get(landed)
+    if existing:
+        store.update_text(landed, title=extract.title, content=extract.text)
+        status = "updated"
+    else:
+        engine = "playwright" if is_js_host(landed) else "visit"
+        ingest_extract(store, extract, fetch_engine=engine, judge=None)
+        status = "indexed"
+    store.mark_seen(url)
+    if landed != url:
+        store.mark_seen(landed)
+    if walk:
+        enqueue_walk(store, landed, extract.html)
+        store.mark_harvested(landed)
+    elif existing:
+        store.unharvest(landed)
+    else:
+        store.mark_harvested(landed)
+    return status

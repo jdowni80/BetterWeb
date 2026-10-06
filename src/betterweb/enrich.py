@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import threading
 
+from betterweb import power
 from betterweb.extract import JUDGE_MAX_CHARS
 from betterweb.ingest import commercial_count
 from betterweb.judge import PageJudge
@@ -12,6 +13,7 @@ from betterweb.store import PageRow, PageStore
 
 SLEEP_IDLE = 5.0
 SLEEP_STEP = 0.4
+SLEEP_BATTERY = 20.0
 
 
 def score_backend(row: PageRow) -> str:
@@ -42,12 +44,18 @@ def enrich_row(store: PageStore, row: PageRow, judge: PageJudge) -> PageRow:
 
 def run_enricher(store: PageStore, stop: threading.Event, *, judge: PageJudge | None = None) -> None:
     active = judge or PageJudge(lazy=True)
-    try:
-        active._load()
-        print(f"enricher gliner ready pending={store.pending_enrichment()}", flush=True)
-    except Exception as exc:
-        print(f"enricher gliner load failed ({exc}); will retry per page", flush=True)
+    loaded = False
     while not stop.is_set():
+        if not power.on_ac_power():
+            stop.wait(SLEEP_BATTERY)
+            continue
+        if not loaded:
+            try:
+                active._load()
+                print(f"enricher gliner ready pending={store.pending_enrichment()}", flush=True)
+            except Exception as exc:
+                print(f"enricher gliner load failed ({exc}); will retry per page", flush=True)
+            loaded = True
         row = store.next_enrichment()
         if row is None:
             stop.wait(SLEEP_IDLE)

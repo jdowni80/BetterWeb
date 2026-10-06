@@ -7,7 +7,10 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "BetterWeb",
-            path: "Sources/BetterWeb"
+            path: "Sources/BetterWeb",
+            linkerSettings: [
+                .linkedFramework("IOKit"),
+            ]
         ),
     ]
 )

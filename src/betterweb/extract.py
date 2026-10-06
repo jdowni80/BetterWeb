@@ -205,7 +205,8 @@ def extract_from_url(url: str, timeout: int = DEFAULT_TIMEOUT) -> PageExtract:
         headers={"User-Agent": USER_AGENT, "Accept": "text/html,application/xhtml+xml"},
     )
     response.raise_for_status()
-    return extract_from_html(_decode_body(response), url=url, source="http")
+    final = str(response.url or url)
+    return extract_from_html(_decode_body(response), url=final, source="http")
 
 
 def _decode_body(response: requests.Response) -> str:

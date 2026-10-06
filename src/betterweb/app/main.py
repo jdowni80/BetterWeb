@@ -16,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 
 from betterweb.browse import open_page
 from betterweb.enrich import start_enricher
+from betterweb.ingest import index_visit
 from betterweb.search import search_index
 from betterweb.store import PageStore
 
@@ -85,11 +86,16 @@ def search(
 def browse(url: str = Query(..., min_length=8)) -> dict:
     view = open_page(url)
     landed = view.url or url
-    queued = STORE.note_visit(landed)
     if view.html:
-        STORE.refresh_snippet(landed, view.html)
+        queued = index_visit(STORE, landed, html=view.html, title=view.title)
     else:
-        threading.Thread(target=STORE.refresh_snippet, args=(landed,), name="snippet-refresh", daemon=True).start()
+        queued = "pending"
+        threading.Thread(
+            target=index_visit,
+            kwargs={"store": STORE, "url": landed, "title": view.title},
+            name="index-visit",
+            daemon=True,
+        ).start()
     return {
         "url": view.url,
         "title": view.title,
@@ -100,6 +106,12 @@ def browse(url: str = Query(..., min_length=8)) -> dict:
         "queue": queued,
         "error": view.error,
     }
+
+
+@app.get("/api/visit")
+def visit(url: str = Query(..., min_length=8)) -> dict:
+    status = index_visit(STORE, url)
+    return {"url": url, "status": status}
 
 
 def _wait_for_health(port: int, attempts: int = 80) -> None:

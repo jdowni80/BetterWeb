@@ -346,12 +346,25 @@ class PageStore:
     def update_text(self, url: str, *, title: str, content: str) -> bool:
         from betterweb.extract import clip_store_text
 
-        existing = self._conn.execute("SELECT title FROM pages WHERE url = ?", (url,)).fetchone()
+        existing = self._conn.execute(
+            "SELECT rowid, title, content FROM pages WHERE url = ?", (url,)
+        ).fetchone()
         if existing is None:
             return False
+        title = title or existing["title"]
+        content = clip_store_text(content)
+        rid = existing["rowid"]
+        self._conn.execute(
+            "INSERT INTO pages_fts(pages_fts, rowid, title, content) VALUES('delete', ?, ?, ?)",
+            (rid, existing["title"], existing["content"]),
+        )
         self._conn.execute(
             "UPDATE pages SET title = ?, content = ? WHERE url = ?",
-            (title or existing["title"], clip_store_text(content), url),
+            (title, content, url),
+        )
+        self._conn.execute(
+            "INSERT INTO pages_fts(rowid, title, content) VALUES (?, ?, ?)",
+            (rid, title, content),
         )
         self._conn.commit()
         return True

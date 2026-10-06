@@ -168,4 +168,14 @@ final class SearchClient {
         }
         return try JSONDecoder().decode(BrowsePage.self, from: data)
     }
+
+    /// Index a URL the WKWebView already opened (in-page navigation / redirect).
+    func visit(url pageURL: String) async {
+        var components = URLComponents(url: baseURL.appendingPathComponent("api/visit"), resolvingAgainstBaseURL: false)!
+        components.queryItems = [URLQueryItem(name: "url", value: pageURL)]
+        guard let url = components.url else { return }
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 60
+        _ = try? await URLSession.shared.data(for: request)
+    }
 }

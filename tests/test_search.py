@@ -132,3 +132,25 @@ def test_failed_enrichment_keeps_flag(tmp_path: Path):
     assert after is not None
     assert after.needs_enrichment is True
     store.close()
+
+
+def test_enricher_skips_on_battery(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr("betterweb.power.on_ac_power", lambda: False)
+    store = PageStore(tmp_path / "index.sqlite")
+    ingest_extract(
+        store,
+        PageExtract(source="test", title="Notes", text="I measured something specific.", url="https://ex.test/b"),
+        fetch_engine="http",
+    )
+    stop = threading.Event()
+    judge = _Judge()
+    thread = threading.Thread(target=run_enricher, args=(store, stop), kwargs={"judge": judge}, daemon=True)
+    thread.start()
+    stop.wait(0.15)
+    stop.set()
+    thread.join(timeout=2)
+    after = store.get("https://ex.test/b")
+    assert after is not None
+    assert after.needs_enrichment is True
+    assert judge.calls == 0
+    store.close()
